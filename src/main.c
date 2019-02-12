@@ -36,6 +36,8 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
+#include <string.h>
+
 /** @addtogroup STM32F4xx_LL_Examples
   * @{
   */
@@ -53,7 +55,7 @@ void     SystemClock_Config(void);
 
 /* Private functions ---------------------------------------------------------*/
 
-static void BoardInit(void)
+static void BoardInit_LEDs(void)
 {
   LL_GPIO_InitTypeDef gpio;
 
@@ -68,6 +70,67 @@ static void BoardInit(void)
   gpio.Alternate  = LL_GPIO_AF_0;
 
   LL_GPIO_Init(GPIOB, &gpio);
+}
+
+static void BoardInit_USART(void)
+{
+  /* Using PD8 (TX) and PD9 (RX) for USART3. */
+  LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_GPIOD);
+  LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_USART3);
+
+  LL_GPIO_InitTypeDef gpio;
+  LL_USART_InitTypeDef usart;
+  LL_USART_ClockInitTypeDef usart_ck;
+
+  /* Configuring USART3, 115200 8-N-1, TX only. */
+  LL_USART_StructInit(&usart);
+  usart.BaudRate = 115200;
+  usart.TransferDirection = LL_USART_DIRECTION_TX;
+  LL_USART_Init(USART3, &usart);
+
+  /* Configuring USART3 TX on PD8 */
+  gpio.Pin        = LL_GPIO_PIN_8;
+  gpio.Mode       = LL_GPIO_MODE_ALTERNATE;
+  gpio.Speed      = LL_GPIO_SPEED_FREQ_LOW;
+  gpio.OutputType = LL_GPIO_OUTPUT_OPENDRAIN;
+  gpio.Pull       = LL_GPIO_PULL_UP;
+  gpio.Alternate  = LL_GPIO_AF_7;
+  LL_GPIO_Init(GPIOD, &gpio);
+
+  /* Configuring USART3 RX on PD9 */
+  gpio.Pin        = LL_GPIO_PIN_9;
+  gpio.Mode       = LL_GPIO_MODE_ALTERNATE;
+  gpio.Speed      = LL_GPIO_SPEED_FREQ_LOW;
+  gpio.OutputType = LL_GPIO_OUTPUT_OPENDRAIN;
+  gpio.Pull       = LL_GPIO_PULL_UP;
+  gpio.Alternate  = LL_GPIO_AF_7;
+  LL_GPIO_Init(GPIOD, &gpio);
+
+  LL_USART_Enable(USART3);
+}
+
+/** Blocking TX for USART3. */
+static void USART3_Tx(const uint8_t *data, uint16_t length)
+{
+  while (length)
+  {
+    while (!LL_USART_IsActiveFlag_TXE(USART3))
+    {
+    }
+
+    LL_USART_TransmitData8(USART3, *data++);
+    length--;
+  }
+
+  while (!LL_USART_IsActiveFlag_TC(USART3))
+  {
+  }
+}
+
+static void BoardInit(void)
+{
+  BoardInit_LEDs();
+  BoardInit_USART();
 }
 
 /**
@@ -90,6 +153,12 @@ int main(void)
     {
       const uint32_t led_lookup[] = {LED1_PIN, LED2_PIN, LED3_PIN};
       const uint32_t all_leds_mask = LED1_PIN | LED2_PIN | LED3_PIN;
+      const char *usart_data[] = {
+        "LED1\r\n",
+        "LED2\r\n",
+        "LED3\r\n"
+      };
+
       uint32_t mask;
 
       /* Dummy delay until we get proper timekeeping/RTOS. */
@@ -101,6 +170,8 @@ int main(void)
 
       mask = ((all_leds_mask & ~led_lookup[led_index]) << 16) | (led_lookup[led_index]);
       GPIOB->BSRR = mask;
+
+      USART3_Tx((const uint8_t *)usart_data[led_index], strlen(usart_data[led_index]));
     }
   }
 }
