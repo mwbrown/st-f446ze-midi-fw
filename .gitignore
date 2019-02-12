@@ -1,0 +1,6 @@
+# Build output
+build/
+f446ze-midi.elf
+f446ze-midi.hex
+f446ze-midi.map
+
