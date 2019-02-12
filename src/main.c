@@ -53,6 +53,23 @@ void     SystemClock_Config(void);
 
 /* Private functions ---------------------------------------------------------*/
 
+static void BoardInit(void)
+{
+  LL_GPIO_InitTypeDef gpio;
+
+  /* LEDs are on PB0, PB7, PB14. */
+  LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_GPIOB);
+
+  gpio.Pin        = LED1_PIN | LED2_PIN | LED3_PIN;
+  gpio.Mode       = LL_GPIO_MODE_OUTPUT;
+  gpio.Speed      = LL_GPIO_SPEED_FREQ_HIGH;
+  gpio.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
+  gpio.Pull       = LL_GPIO_PULL_NO;
+  gpio.Alternate  = LL_GPIO_AF_0;
+
+  LL_GPIO_Init(GPIOB, &gpio);
+}
+
 /**
   * @brief  Main program
   * @param  None
@@ -63,11 +80,28 @@ int main(void)
   /* Configure the system clock to 180 MHz */
   SystemClock_Config();
 
-  /* Add your application code here */
+  /* Initialize GPIOs and other peripherals. */
+  BoardInit();
 
   /* Infinite loop */
   while (1)
   {
+    for(int led_index = 0; led_index < 3; led_index++)
+    {
+      const uint32_t led_lookup[] = {LED1_PIN, LED2_PIN, LED3_PIN};
+      const uint32_t all_leds_mask = LED1_PIN | LED2_PIN | LED3_PIN;
+      uint32_t mask;
+
+      /* Dummy delay until we get proper timekeeping/RTOS. */
+      volatile int x = 1800000;
+      while(x--) { }
+
+      /* Build a mask that turns on the current LED and turns
+         off the other two (i.e. to write to the BSRR). */
+
+      mask = ((all_leds_mask & ~led_lookup[led_index]) << 16) | (led_lookup[led_index]);
+      GPIOB->BSRR = mask;
+    }
   }
 }
 
