@@ -41,6 +41,7 @@ CFLAGS += -Werror=implicit-function-declaration
 
 APP_SOURCES :=                  \
 	src/main.c                  \
+	src/stm32f4xx_it.c          \
 	src/system_stm32f4xx.c
 
 LL_SOURCES :=                             \
