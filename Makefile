@@ -23,6 +23,8 @@ IMAGE_NAME := f446ze-midi
 
 INCLUDES :=                                          \
 	-Isrc                                            \
+	-Isrc/freertos/include                           \
+	-Isrc/freertos/portable/GCC/ARM_CM4F             \
 	-I$(CMSIS_DIR)/Include                           \
 	-I$(CMSIS_DIR)/Device/ST/STM32F4xx/Include       \
 	-I$(HAL_DIR)/Inc                                 \
@@ -30,8 +32,7 @@ INCLUDES :=                                          \
 
 DEFINES := -DSTM32F446xx -DUSE_FULL_LL_DRIVER -DHSE_VALUE=8000000U
 
-# FIXME add FPU support
-CPUFLAGS := -mcpu=cortex-m4 -mthumb
+CPUFLAGS := -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16
 
 CFLAGS  = $(CPUFLAGS) -g -Os -ffreestanding -ffunction-sections -fdata-sections -Wall $(INCLUDES) $(DEFINES) 
 LDFLAGS = $(CPUFLAGS) -Wl,-Map=$(IMAGE_NAME).map -T STM32F446ZETx_FLASH.ld -specs=nano.specs -Wl,--gc-sections
