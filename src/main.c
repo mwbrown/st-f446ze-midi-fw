@@ -38,6 +38,9 @@
 
 #include <string.h>
 
+#include <FreeRTOS.h>
+#include <task.h>
+
 /** @addtogroup STM32F4xx_LL_Examples
   * @{
   */
@@ -132,19 +135,8 @@ static void BoardInit(void)
   BoardInit_USART();
 }
 
-/**
-  * @brief  Main program
-  * @param  None
-  * @retval None
-  */
-int main(void)
+static void MainThread(void *userdata)
 {
-  /* Configure the system clock to 180 MHz */
-  SystemClock_Config();
-
-  /* Initialize GPIOs and other peripherals. */
-  BoardInit();
-
   /* Infinite loop */
   while (1)
   {
@@ -160,9 +152,7 @@ int main(void)
 
       uint32_t mask;
 
-      /* Dummy delay until we get proper timekeeping/RTOS. */
-      volatile int x = 1800000;
-      while(x--) { }
+      vTaskDelay(200);
 
       /* Build a mask that turns on the current LED and turns
          off the other two (i.e. to write to the BSRR). */
@@ -172,6 +162,31 @@ int main(void)
 
       USART3_Tx((const uint8_t *)usart_data[led_index], strlen(usart_data[led_index]));
     }
+  }
+}
+
+static TaskHandle_t taskHandle_Main;
+
+/**
+  * @brief  Main program
+  * @param  None
+  * @retval None
+  */
+int main(void)
+{
+  /* Configure the system clock to 180 MHz */
+  SystemClock_Config();
+
+  /* Initialize GPIOs and other peripherals. */
+  BoardInit();
+
+  xTaskCreate(MainThread, "main", 1024 / sizeof(portSTACK_TYPE), NULL, tskIDLE_PRIORITY, &taskHandle_Main);
+  vTaskStartScheduler();
+
+  /* Should not get here. */
+  taskDISABLE_INTERRUPTS();
+  for(;;)
+  {
   }
 }
 

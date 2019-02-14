@@ -68,10 +68,21 @@ LL_SOURCES :=                             \
 	$(HAL_DIR)/Src/stm32f4xx_ll_usb.c     \
 	$(HAL_DIR)/Src/stm32f4xx_ll_utils.c
 
+RTOS_SOURCES :=                                 \
+	src/freertos/croutine.c                     \
+	src/freertos/event_groups.c                 \
+	src/freertos/list.c                         \
+	src/freertos/queue.c                        \
+	src/freertos/stream_buffer.c                \
+	src/freertos/tasks.c                        \
+	src/freertos/timers.c                       \
+	src/freertos/portable/GCC/ARM_CM4F/port.c   \
+	src/freertos/portable/MemMang/heap_4.c
+
 STARTUP_SOURCES :=              \
 	src/startup_stm32f446xx.s
 
-SOURCES_C := $(APP_SOURCES) $(LL_SOURCES)
+SOURCES_C := $(APP_SOURCES) $(LL_SOURCES) $(RTOS_SOURCES)
 SOURCES_S := $(STARTUP_SOURCES)
 
 OBJECTS_C := $(addprefix $(OBJDIR)/, $(SOURCES_C:.c=.c.o))
