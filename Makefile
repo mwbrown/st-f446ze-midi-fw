@@ -40,10 +40,13 @@ LDFLAGS = $(CPUFLAGS) -Wl,-Map=$(IMAGE_NAME).map -T STM32F446ZETx_FLASH.ld -spec
 # Make implicit function declarations error out.
 CFLAGS += -Werror=implicit-function-declaration
 
-APP_SOURCES :=                  \
-	src/main.c                  \
-	src/stm32f4xx_it.c          \
-	src/system_stm32f4xx.c
+APP_SOURCES :=                    \
+	src/main.c                    \
+	src/stm32f4xx_it.c            \
+	src/system_stm32f4xx.c        \
+	src/drivers/debug_uart.c      \
+	src/mini-printf/mini-printf.c \
+	src/malloc.c
 
 LL_SOURCES :=                             \
 	$(HAL_DIR)/Src/stm32f4xx_ll_adc.c     \

@@ -35,6 +35,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "drivers/debug_uart.h"
 
 #include <string.h>
 
@@ -75,64 +76,9 @@ static void BoardInit_LEDs(void)
   LL_GPIO_Init(GPIOB, &gpio);
 }
 
-static void BoardInit_USART(void)
-{
-  /* Using PD8 (TX) and PD9 (RX) for USART3. */
-  LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_GPIOD);
-  LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_USART3);
-
-  LL_GPIO_InitTypeDef gpio;
-  LL_USART_InitTypeDef usart;
-
-  /* Configuring USART3, 115200 8-N-1, TX only. */
-  LL_USART_StructInit(&usart);
-  usart.BaudRate = 115200;
-  usart.TransferDirection = LL_USART_DIRECTION_TX;
-  LL_USART_Init(USART3, &usart);
-
-  /* Configuring USART3 TX on PD8 */
-  gpio.Pin        = LL_GPIO_PIN_8;
-  gpio.Mode       = LL_GPIO_MODE_ALTERNATE;
-  gpio.Speed      = LL_GPIO_SPEED_FREQ_LOW;
-  gpio.OutputType = LL_GPIO_OUTPUT_OPENDRAIN;
-  gpio.Pull       = LL_GPIO_PULL_UP;
-  gpio.Alternate  = LL_GPIO_AF_7;
-  LL_GPIO_Init(GPIOD, &gpio);
-
-  /* Configuring USART3 RX on PD9 */
-  gpio.Pin        = LL_GPIO_PIN_9;
-  gpio.Mode       = LL_GPIO_MODE_ALTERNATE;
-  gpio.Speed      = LL_GPIO_SPEED_FREQ_LOW;
-  gpio.OutputType = LL_GPIO_OUTPUT_OPENDRAIN;
-  gpio.Pull       = LL_GPIO_PULL_UP;
-  gpio.Alternate  = LL_GPIO_AF_7;
-  LL_GPIO_Init(GPIOD, &gpio);
-
-  LL_USART_Enable(USART3);
-}
-
-/** Blocking TX for USART3. */
-static void USART3_Tx(const uint8_t *data, uint16_t length)
-{
-  while (length)
-  {
-    while (!LL_USART_IsActiveFlag_TXE(USART3))
-    {
-    }
-
-    LL_USART_TransmitData8(USART3, *data++);
-    length--;
-  }
-
-  while (!LL_USART_IsActiveFlag_TC(USART3))
-  {
-  }
-}
-
 static void BoardInit(void)
 {
   BoardInit_LEDs();
-  BoardInit_USART();
 }
 
 static void MainThread(void *userdata)
@@ -144,11 +90,6 @@ static void MainThread(void *userdata)
     {
       const uint32_t led_lookup[] = {LED1_PIN, LED2_PIN, LED3_PIN};
       const uint32_t all_leds_mask = LED1_PIN | LED2_PIN | LED3_PIN;
-      const char *usart_data[] = {
-        "LED1\r\n",
-        "LED2\r\n",
-        "LED3\r\n"
-      };
 
       uint32_t mask;
 
@@ -160,7 +101,7 @@ static void MainThread(void *userdata)
       mask = ((all_leds_mask & ~led_lookup[led_index]) << 16) | (led_lookup[led_index]);
       GPIOB->BSRR = mask;
 
-      USART3_Tx((const uint8_t *)usart_data[led_index], strlen(usart_data[led_index]));
+      DebugUart_printf("LED%d\r\n", led_index + 1);
     }
   }
 }
@@ -179,6 +120,7 @@ int main(void)
 
   /* Initialize GPIOs and other peripherals. */
   BoardInit();
+  DebugUart_init();
 
   xTaskCreate(MainThread, "main", 1024 / sizeof(portSTACK_TYPE), NULL, tskIDLE_PRIORITY, &taskHandle_Main);
   vTaskStartScheduler();
