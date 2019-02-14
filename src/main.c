@@ -80,7 +80,6 @@ static void BoardInit_USART(void)
 
   LL_GPIO_InitTypeDef gpio;
   LL_USART_InitTypeDef usart;
-  LL_USART_ClockInitTypeDef usart_ck;
 
   /* Configuring USART3, 115200 8-N-1, TX only. */
   LL_USART_StructInit(&usart);
